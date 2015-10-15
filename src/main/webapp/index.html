@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Groovy Web Console</title>
+    <style type="text/css" media="screen">
+        #editor {
+            position: absolute;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            left: 0;
+        }
+
+        #output {
+            position: absolute;
+            top: 80%;
+            right: 0;
+            bottom: 0;
+            left: 0;
+        }
+
+        .window_label {
+            border: solid 1px #F1F1F1;
+            background: #fff;
+            display: inline-block;
+            height: 22px;
+            padding: 0 6px;
+            line-height: 22px;
+            position: absolute;
+            top: 81%;
+            right: 6px;
+            text-align: center;
+            font-size: 12px;
+            color: #777;
+            border-radius: 1px;
+            z-index: 30;
+        }
+    </style>
+</head>
+<body>
+
+<div id="editor"></div>
+<div id="output"></div>
+<span class="window_label">Result</span>
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.2.0/ace.js"></script>
+<script>
+    (function (window, $, ace, undefined) {
+
+        var editor;
+        var output;
+
+        var initSnippet = function(editor) {
+            $.ajax({
+                type: 'GET',
+                url: 'snippet.groovy'
+            }).done(function (initialCode) {
+                editor.focus();
+                editor.setValue(initialCode);
+            });
+        };
+
+        var executeScript = function(code) {
+            $.ajax({
+                type: 'POST',
+                contentType: "text/plain; charset=utf-8",
+                data: code,
+                url: "/rest/script"
+            }).always(function (response, textStatus) {
+                console.log("%o, %o, %o", response, textStatus, response.result)
+                output.setValue(JSON.stringify(response, null, 2), 1);
+            });
+        };
+
+        editor = ace.edit("editor");
+        editor.setTheme("ace/theme/monokai");
+        editor.getSession().setMode("ace/mode/groovy");
+
+        editor.commands.addCommand({
+            name: 'myCommand',
+            bindKey: {win: 'Ctrl-Enter', mac: 'Command-Enter'},
+            exec: function (editor) {
+                var code = editor.getValue();
+                executeScript(code);
+            },
+            readOnly: true // false if this command should not apply in readOnly mode
+        });
+
+        initSnippet(editor);
+
+        output = ace.edit("output");
+        output.setReadOnly(true);
+    })(window, $, ace);
+</script>
+</body>
+</html>
